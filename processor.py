@@ -170,14 +170,23 @@ def procesar(input_path, output_path, orden="reciente"):
                 r += 1
             ultima_fila_datos = r - 1
 
-            # fila AUTOSUMA del mes (formula real, no hardcode)
+            # fila TOTAL del mes: numero directo (siempre se ve, sin depender de Excel)
             sc = ws.cell(row=r, column=1, value=f"TOTAL {MESES_ES.get(mes, mes)} {anio}")
             sc.font = sub_font
             col_letter = get_column_letter(valor_idx)
-            tcell = ws.cell(row=r, column=valor_idx,
-                            value=f"=SUM({col_letter}{primera_fila_datos}:{col_letter}{ultima_fila_datos})")
+            total_mes = float(block["_valor"].fillna(0).sum())
+            tcell = ws.cell(row=r, column=valor_idx, value=total_mes)
             tcell.font = sub_font
             tcell.number_format = '#,##0'
+            # dejar la formula como comentario por si el usuario quiere recalcular en Excel
+            try:
+                from openpyxl.comments import Comment
+                tcell.comment = Comment(
+                    f"=SUM({col_letter}{primera_fila_datos}:{col_letter}{ultima_fila_datos})",
+                    "Bot"
+                )
+            except Exception:
+                pass
             for ci in range(1, len(out_cols) + 1):
                 ws.cell(row=r, column=ci).fill = sub_fill
                 ws.cell(row=r, column=ci).border = border
